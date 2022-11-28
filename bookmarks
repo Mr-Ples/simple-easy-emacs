@@ -1,0 +1,10 @@
+;;;; Emacs Bookmark Format Version 1;;;; -*- coding: utf-8-emacs; mode: lisp-data -*-
+;;; This format is meant to be slightly human-readable;
+;;; nevertheless, you probably don't want to edit it.
+;;; -*- End Of Bookmark File Format Version Stamp -*-
+(("env"
+ (filename . "/sudo:root@localhost:/etc/profile")
+ (front-context-string)
+ (rear-context-string . "AY_BACKEND=gtk\n\n")
+ (position . 8320))
+)

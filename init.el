@@ -242,13 +242,6 @@ Example:
    (defun mm/add-bash-completion ()
      (add-hook 'completion-at-point-functions #'bash-completion-capf nil t))))
 
-;; Lisp
-;; (use-package paredit
-;;   :hook ((emacs-lisp-mode . enable-paredit-mode)
-;;          (lisp-mode       . enable-paredit-mode)))
-
-(use-package rainbow-delimiters)
-
 ;; Clojure
 (use-package cider
   :bind (("C-c M-f" . cider-format-buffer)
@@ -327,40 +320,7 @@ Example:
 	 ("C-/" . 'mc/edit-lines)
 	 ("C-S-<mouse-1>" . mc/add-cursor-on-click)))
 
-;; Magit
 (use-package magit)
-
-(defun my-full-magit-log(directory short-name)
-  (persp-switch short-name)
-  (magit-status directory)
-  (magit-log-all (append magit-log-arguments '("--date-order") nil))
-  (rename-buffer (concat "*" short-name "-git-log*"))
-  (delete-other-windows))
-
-(defun my-open-magit-persp(&optional arg)
-  "Open a new perspective with dired in one pane and Magit in the other.
-If no ARG given, prompt user for folder (with ido)."
-  (interactive)
-  (persp-switch "temp-123456789") ;; FIXME: make this random
-  (if arg
-      (dired arg)
-    (ido-dired))
-  (persp-rename (buffer-name))
-  (magit-status))
-
-;; Global key binds  
-(global-set-key (kbd "C-c m") 'my-open-magit-persp)                                                    
-(global-set-key (kbd "C-z") 'undo)
-(global-set-key (kbd "C-S-Z") 'undo-redo)
-
-;; window undo
-(setq winner-mode 1)
-
-;; The user option ‘auto-save-visited-interval’ controls how often to
-;; auto-save a buffer into its visited file.
-;; seconds
-(setq auto-save-visited-interval 5)
-(auto-save-visited-mode)
 
 (use-package cape
   :ensure t
@@ -371,6 +331,29 @@ If no ARG given, prompt user for folder (with ido)."
   :ensure t
   :bind (("C-c C-r e" . sudo-edit)))
 
+(use-package rainbow-delimiters)
+(rainbow-delimiters-mode)
+
+;; Global key binds  
+(global-set-key (kbd "C-c m") 'my-open-magit-persp)                                                    
+(global-set-key (kbd "C-z") 'undo)
+(global-set-key (kbd "C-S-Z") 'undo-redo)
+
+;; set variables
+(setq auto-save-visited-interval 5)
+(auto-save-visited-mode)
+
+;; I want M-! (shell-command) to pick up my aliases and so run .bashrc:
+(setq shell-file-name "bash-for-emacs.sh")  ; Does this: BASH_ENV="~/.bashrc" exec bash "$@"
+(setq shell-command-switch "-c")
+
+;; window undo
+(setq winner-mode 1)
+
+(require 'bookmark)
+(setq bookmark-save-flag 1)
+
+;; functions
 (defun create-scratch-buffer nil
    "create a scratch buffer"
    (interactive)
@@ -378,12 +361,28 @@ If no ARG given, prompt user for folder (with ido)."
    (lisp-interaction-mode))
 (global-set-key (kbd "C-c C-r n") 'create-scratch-buffer)
 
-(require 'bookmark)
-(setq bookmark-save-flag 1)
+;; (read-from-minibuffer
+;;  (concat
+;;   (propertize "Bold" 'face '(bold default))
+;;   (propertize " and normal: " 'face '(default))))
 
-(setq scroll-preserve-screen-position t)
+(defun nuke-all-buffers ()
+  (interactive)
+  (mapcar 'kill-buffer (buffer-list))
+  (delete-other-windows))
+(global-set-key (kbd "C-x K") 'nuke-all-buffers)
 
-
-(require 'bookmark)
-(setq bookmark-save-flag 1)
-(setq scroll-preserve-screen-position t)
+;; layouts
+(defun my-idlegame-cli ()
+  (interactive)
+  (nuke-all-buffers)
+  (delete-other-windows)
+  (switch-to-buffer (get-buffer-create "logcatusb"))
+  (async-shell-command "logcatusb" (current-buffer))
+  (split-window-horizontally)
+  (switch-to-buffer (get-buffer-create "screencopyusb"))
+  (async-shell-command "screencopyusb" (current-buffer))
+  (split-window-vertically)
+  (other-window 1)
+  (switch-to-buffer (get-buffer-create "idlegame-cli"))
+  (shell))
