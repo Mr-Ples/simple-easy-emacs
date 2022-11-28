@@ -1,6 +1,5 @@
 ;; -*- lexical-binding: t; -*-
 
-
 ;; The default is 800 kilobytes.  Measured in bytes.
 (setq gc-cons-threshold (* 50 1000 1000))
 
@@ -243,7 +242,18 @@ Example:
    (defun mm/add-bash-completion ()
      (add-hook 'completion-at-point-functions #'bash-completion-capf nil t))))
 
+;; Lisp
+;; (use-package paredit
+;;   :hook ((emacs-lisp-mode . enable-paredit-mode)
+;;          (lisp-mode       . enable-paredit-mode)))
+
+(use-package rainbow-delimiters)
+
+;; Clojure
 (use-package cider
+  :bind (("C-c M-f" . cider-format-buffer)
+         :map clojure-mode-map
+         ("C-c C-r r" . cider-eval-print-last-sexp))
   :config
   (setq cider-babashka-parameters "nrepl-server 0"
 	clojure-toplevel-inside-comment-form t)
@@ -301,3 +311,79 @@ Example:
 	 :annotation-function #'cider-annotate-symbol))))
 
   (advice-add 'cider-complete-at-point :override #'mm/cider-complete-at-point))
+
+(use-package vundo
+  :ensure t
+  :bind (("C-?" . vundo))
+  :config
+  (setq vundo-glyph-alist vundo-unicode-symbols
+	vundo-compact-display t))
+
+(use-package multiple-cursors
+  :ensure t
+  :bind (("C-." . mc/mark-next-like-this)
+	 ("C-." . mc/mark-next-like-this)
+	 ("C-." . mc/mark-next-like-this)
+	 ("C-/" . 'mc/edit-lines)
+	 ("C-S-<mouse-1>" . mc/add-cursor-on-click)))
+
+;; Magit
+(use-package magit)
+
+(defun my-full-magit-log(directory short-name)
+  (persp-switch short-name)
+  (magit-status directory)
+  (magit-log-all (append magit-log-arguments '("--date-order") nil))
+  (rename-buffer (concat "*" short-name "-git-log*"))
+  (delete-other-windows))
+
+(defun my-open-magit-persp(&optional arg)
+  "Open a new perspective with dired in one pane and Magit in the other.
+If no ARG given, prompt user for folder (with ido)."
+  (interactive)
+  (persp-switch "temp-123456789") ;; FIXME: make this random
+  (if arg
+      (dired arg)
+    (ido-dired))
+  (persp-rename (buffer-name))
+  (magit-status))
+
+;; Global key binds  
+(global-set-key (kbd "C-c m") 'my-open-magit-persp)                                                    
+(global-set-key (kbd "C-z") 'undo)
+(global-set-key (kbd "C-S-Z") 'undo-redo)
+
+;; window undo
+(setq winner-mode 1)
+
+;; The user option ‘auto-save-visited-interval’ controls how often to
+;; auto-save a buffer into its visited file.
+;; seconds
+(setq auto-save-visited-interval 5)
+(auto-save-visited-mode)
+
+(use-package cape
+  :ensure t
+  :init
+  (add-to-list 'completion-at-point-functions #'cape-file))
+
+(use-package sudo-edit
+  :ensure t
+  :bind (("C-c C-r e" . sudo-edit)))
+
+(defun create-scratch-buffer nil
+   "create a scratch buffer"
+   (interactive)
+   (switch-to-buffer (get-buffer-create "*scratch*"))
+   (lisp-interaction-mode))
+(global-set-key (kbd "C-c C-r n") 'create-scratch-buffer)
+
+(require 'bookmark)
+(setq bookmark-save-flag 1)
+
+(setq scroll-preserve-screen-position t)
+
+
+(require 'bookmark)
+(setq bookmark-save-flag 1)
+(setq scroll-preserve-screen-position t)
