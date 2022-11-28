@@ -366,13 +366,22 @@ Example:
 ;;   (propertize "Bold" 'face '(bold default))
 ;;   (propertize " and normal: " 'face '(default))))
 
-(defun nuke-all-buffers ()
+(defun kill-all-buffers ()
+  "Kill all buffers."
   (interactive)
   (mapcar 'kill-buffer (buffer-list))
   (delete-other-windows))
-(global-set-key (kbd "C-x K") 'nuke-all-buffers)
+
+(defun kill-other-buffers ()
+  "Kill all other buffers."
+  (interactive)
+  (mapc 'kill-buffer 
+        (delq (current-buffer) (buffer-list)))
+  (delete-other-windows))
+(global-set-key (kbd "C-x K") 'kill-other-buffers)
 
 ;; layouts
+;; support setup
 (defun my-idlegame-cli ()
   (interactive)
   (nuke-all-buffers)
@@ -384,5 +393,44 @@ Example:
   (async-shell-command "screencopyusb" (current-buffer))
   (split-window-vertically)
   (other-window 1)
-  (switch-to-buffer (get-buffer-create "idlegame-cli"))
   (shell))
+
+;; redshift setup
+(defvar redshift-repo "~/repos/redshift-queries/")
+(defun my-quicksight-queries ()
+  "Open quicksite sql list using find-name-dired"
+  (interactive)
+  (tab-bar-mode)
+  (tab-rename "quicksight")
+  (find-name-dired "~/repos/quicksight/private/simon/" "*sql"))
+
+(defun my-quicksight-queries-new-frame ()
+  "Open quicksite sql list in new frame using find-name-dired"
+  (interactive)
+  (make-frame)
+  (other-frame 1)
+  (my-quicksight-queries))
+
+(defun my-redshift-queries ()
+  "Open redshift clojure user queries layout in current frame."
+  (interactive)
+  (setq default-directory redshift-repo)
+  (find-file "user/org/sg/redshift_queries/simon/user.clj")
+  (split-window-horizontally)
+  (other-window 1)
+  (setq default-directory redshift-repo)
+  (find-file "src/org/sg/aws/sso.clj"))
+
+(defun my-redshift-queries-new-frame ()
+  "Open redshift clojure user queries layout in new frame."
+  (interactive)
+  (make-frame)
+  (other-frame 1)
+  (my-redshift-queries))
+
+(defun my-redshift-setup ()
+  (interactive)
+  (my-redshift-queries-new-frame)
+  (split-window-vertically)
+  (my-quicksight-queries-new-frame)
+  (call-interactively #'cider-jack-in-clj (current-buffer)))
