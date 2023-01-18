@@ -2,7 +2,27 @@
 ;;; This format is meant to be slightly human-readable;
 ;;; nevertheless, you probably don't want to edit it.
 ;;; -*- End Of Bookmark File Format Version Stamp -*-
-(("env"
+(("bashrc"
+ (filename . "~/.bashrc")
+ (front-context-string . "\n\n# idlegame\nali")
+ (rear-context-string . "c upgrade --aur\"")
+ (position . 365))
+("python_scripts"
+ (filename . "~/bin/projects/python_scripts/")
+ (front-context-string . "data\n  -rw-r--r-")
+ (rear-context-string . "96 Nov 10 22:18 ")
+ (position . 240))
+("notes"
+ (filename . "~/Documents/Emacs/notes")
+ (front-context-string)
+ (rear-context-string . "otes:\n==========")
+ (position . 18))
+("todo"
+ (filename . "~/Documents/Emacs/some_note")
+ (front-context-string)
+ (rear-context-string . "\n\n--------------")
+ (position . 22))
+("env"
  (filename . "/sudo:root@localhost:/etc/profile")
  (front-context-string)
  (rear-context-string . "AY_BACKEND=gtk\n\n")

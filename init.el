@@ -209,7 +209,7 @@ Example:
 (use-package embark
   :ensure t
   :bind
-  (("C-." . embark-act)		;; pick some comfortable binding
+  (("C-'" . embark-act)		;; pick some comfortable binding
    ("C-;" . embark-dwim)	;; good alternative: M-.
    ("C-h B" . embark-bindings)) ;; alternative for `describe-bindings'
   :init
@@ -221,6 +221,14 @@ Example:
                '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
                  nil
                  (window-parameters (mode-line-format . none)))))
+
+;; https://github.com/karthink/consult-dir
+(use-package consult-dir
+  :ensure t
+  :bind (("C-x C-d" . consult-dir)
+         :map minibuffer-local-completion-map
+         ("C-x C-d" . consult-dir)
+         ("C-x C-j" . consult-dir-jump-file)))
 
 (use-package bash-completion
   :init
@@ -314,9 +322,10 @@ Example:
 
 (use-package multiple-cursors
   :ensure t
-  :bind (("C-." . mc/mark-next-like-this)
+  :bind (("C-<" . mc/mark-previous-like-this)
+	 ("C-," . mc/unmark-next-like-this)
 	 ("C-." . mc/mark-next-like-this)
-	 ("C-." . mc/mark-next-like-this)
+	 ("C->" . mc/mark-all-like-this)
 	 ("C-/" . 'mc/edit-lines)
 	 ("C-S-<mouse-1>" . mc/add-cursor-on-click)))
 
@@ -324,6 +333,7 @@ Example:
 
 (use-package cape
   :ensure t
+  :bind (("C-M-y" . cape-file))
   :init
   (add-to-list 'completion-at-point-functions #'cape-file))
 
@@ -334,31 +344,162 @@ Example:
 (use-package rainbow-delimiters)
 (rainbow-delimiters-mode)
 
+(use-package elogcat)
+(defun extract-adb-device-ids ()
+  (remove "List"
+	  (remove nil
+		  (mapcar #'car
+			  (mapcar #'split-string
+				  (split-string
+				   (shell-command-to-string "adb devices") "\n"))))))
+(defcustom elogcat-logcat-command
+  "logcat -s Unity UTC -v threadtime -b main -b events -b system -b radio"
+  "DOC."
+  :group 'elogcat)
+(defun move-elogcat-to-point-max ()
+  "Moves elogcat to end of buffer"
+  (if (not (string-match "*elogcat*" (format "%s" (selected-window))))
+    (with-selected-window (get-buffer-window "*elogcat*")
+    (goto-char (point-max))))
+  )
+(defun elogcat-device (device)
+  "Start the adb logcat process for given device."
+  (interactive
+   (let ((completion-ignore-case  t))
+     (list (completing-read "Choose device: " (extract-adb-device-ids) nil t))))
+  (let ((proc (start-process-shell-command
+               "elogcat"
+               elogcat-buffer
+               (concat
+		(concat "adb -s " device " shell ")
+                (shell-quote-argument
+                 (concat elogcat-logcat-command
+                         (when elogcat-enable-klog
+                           (concat
+                            " & " elogcat-klog-command))))))))
+    (set-process-filter proc 'elogcat-process-filter)
+    (set-process-sentinel proc 'elogcat-process-sentinel)
+    (with-current-buffer elogcat-buffer
+      (elogcat-mode t)
+      (setq buffer-read-only t)
+      (font-lock-mode t))
+    (switch-to-buffer elogcat-buffer)
+    (goto-char (point-max))
+    (run-with-timer 0 0.5 'move-elogcat-to-point-max)))
+
 ;; Global key binds  
 (global-set-key (kbd "C-c m") 'my-open-magit-persp)                                                    
 (global-set-key (kbd "C-z") 'undo)
 (global-set-key (kbd "C-S-Z") 'undo-redo)
+(global-set-key (kbd "C-x m") 'shell)
+(global-set-key (kbd "C-y") 'yank-from-kill-ring)
+(global-set-key (kbd "C-v") 'yank)
 
+(select-enable-clipboard)
 ;; set variables
 (setq auto-save-visited-interval 5)
 (auto-save-visited-mode)
+(setq save-interprogram-paste-before-kill t)
+(setq comint-scroll-to-bottom-on-output t) ;; doens't work
 
 ;; I want M-! (shell-command) to pick up my aliases and so run .bashrc:
 (setq shell-file-name "bash-for-emacs.sh")  ; Does this: BASH_ENV="~/.bashrc" exec bash "$@"
 (setq shell-command-switch "-c")
 
 ;; window undo
-(setq winner-mode 1)
+(winner-mode 1)
 
 (require 'bookmark)
 (setq bookmark-save-flag 1)
+
+;; layouts
+;; support setup
+(defun my-idlegame-cli (device)
+  (interactive
+   (let ((completion-ignore-case  t))
+     (list (completing-read "Choose device: " (extract-adb-device-ids) nil t))))
+  (kill-all-buffers)
+  (elogcat-device device)
+  (split-window-horizontally)
+  (switch-to-buffer (get-buffer-create "screencopyusb"))
+  (async-shell-command "screencopyusb" (current-buffer)) 
+  (split-window-vertically)
+  (other-window 1)
+  (shell)
+  (rename-buffer "idlegame-shell"))
+
+;; support setup
+(defun my-idlegame-cli-emulator (device)
+  (interactive
+   (let ((completion-ignore-case  t))
+     (list (completing-read "Choose device: " (extract-adb-device-ids) nil t))))
+  (kill-all-buffers)
+  (elogcat-device device)
+  (split-window-horizontally)
+  (switch-to-buffer (get-buffer-create "emulator"))
+  (async-shell-command "gmtool admin start 'Google Pixel'" (current-buffer)) 
+  (split-window-vertically)
+  (other-window 1)
+  (shell)
+  (rename-buffer "idlegame-shell"))
+
+;; redshift setpu
+(defvar redshift-repo "~/repos/redshift-queries/")
+(defun my-quicksight-queries ()
+  "Open quicksite sql list using find-name-dired"
+  (interactive)
+  (delete-other-windows)
+  (tab-bar-mode t)
+  (tab-rename "quicksight")
+  (find-name-dired "~/repos/quicksight/private/simon/" "*sql")
+  (split-window-horizontally)
+  (magit-status)
+  (split-window-vertically)
+  (tab-new)
+  (tab-rename "cider-shell")
+  (switch-to-buffer "cider-shell")
+  (toggle-truncate-lines t))
+
+(defun my-quicksight-queries-new-frame ()
+  "Open quicksite sql list in new frame using find-name-dired"
+  (interactive)
+  (make-frame-on-monitor "DVI-D-0")
+  (other-frame 1)
+  (my-quicksight-queries))
+
+(defun my-clojure-redshift-queries ()
+  "Open redshift clojure user queries layout in current frame."
+  (interactive)
+  (delete-other-windows)
+  (setq default-directory redshift-repo)
+  (find-file "user/org/sg/redshift_queries/simon/user.clj")
+  (split-window-horizontally)
+  (other-window 1)
+  (setq default-directory redshift-repo)
+  (find-file "src/org/sg/aws/sso.clj")
+  (split-window-vertically)
+  (call-interactively #'cider-jack-in-clj (current-buffer)))
+
+(defun my-clojure-redshift-queries-new-frame ()
+  "Open redshift clojure user queries layout in new frame."
+  (interactive)
+  (make-frame-on-monitor "HDMI-A-0")
+  (other-frame 1)
+  (my-clojure-redshift-queries))
+
+;; startup functions
+;; fullscreen on startup of new frame
+(add-to-list 'default-frame-alist '(fullscreen . maximized))
+;; clojure tables no wrap
+(toggle-truncate-lines t)
 
 ;; functions
 (defun create-scratch-buffer nil
    "create a scratch buffer"
    (interactive)
    (switch-to-buffer (get-buffer-create "*scratch*"))
-   (lisp-interaction-mode))
+   (lisp-interaction-mode)
+   (message "The world lay before you."))
 (global-set-key (kbd "C-c C-r n") 'create-scratch-buffer)
 
 ;; (read-from-minibuffer
@@ -370,67 +511,29 @@ Example:
   "Kill all buffers."
   (interactive)
   (mapcar 'kill-buffer (buffer-list))
-  (delete-other-windows))
+  (delete-other-windows)
+  (message "All buffers killed! You have no power here."))
 
 (defun kill-other-buffers ()
   "Kill all other buffers."
   (interactive)
   (mapc 'kill-buffer 
         (delq (current-buffer) (buffer-list)))
-  (delete-other-windows))
+  (delete-other-windows)
+  (message "All buffers killed! Except this one."))
 (global-set-key (kbd "C-x K") 'kill-other-buffers)
 
-;; layouts
-;; support setup
-(defun my-idlegame-cli ()
-  (interactive)
-  (nuke-all-buffers)
-  (delete-other-windows)
-  (switch-to-buffer (get-buffer-create "logcatusb"))
-  (async-shell-command "logcatusb" (current-buffer))
-  (split-window-horizontally)
-  (switch-to-buffer (get-buffer-create "screencopyusb"))
-  (async-shell-command "screencopyusb" (current-buffer))
-  (split-window-vertically)
-  (other-window 1)
-  (shell))
+;; open shell in a given dir
+(defun shell-dir (name dir)
+  (interactive "sShell name: \nDDirectory: ")
+  (let ((default-directory dir))
+    (shell name)))
 
-;; redshift setup
-(defvar redshift-repo "~/repos/redshift-queries/")
-(defun my-quicksight-queries ()
-  "Open quicksite sql list using find-name-dired"
-  (interactive)
-  (tab-bar-mode)
-  (tab-rename "quicksight")
-  (find-name-dired "~/repos/quicksight/private/simon/" "*sql"))
-
-(defun my-quicksight-queries-new-frame ()
-  "Open quicksite sql list in new frame using find-name-dired"
-  (interactive)
-  (make-frame)
-  (other-frame 1)
-  (my-quicksight-queries))
-
-(defun my-redshift-queries ()
-  "Open redshift clojure user queries layout in current frame."
-  (interactive)
-  (setq default-directory redshift-repo)
-  (find-file "user/org/sg/redshift_queries/simon/user.clj")
-  (split-window-horizontally)
-  (other-window 1)
-  (setq default-directory redshift-repo)
-  (find-file "src/org/sg/aws/sso.clj"))
-
-(defun my-redshift-queries-new-frame ()
-  "Open redshift clojure user queries layout in new frame."
-  (interactive)
-  (make-frame)
-  (other-frame 1)
-  (my-redshift-queries))
-
-(defun my-redshift-setup ()
-  (interactive)
-  (my-redshift-queries-new-frame)
-  (split-window-vertically)
-  (my-quicksight-queries-new-frame)
-  (call-interactively #'cider-jack-in-clj (current-buffer)))
+;; rename cider shell to a reasonable name
+(let ((once))
+  (defun my-cider-init-function ()
+    (unless once
+      (setf once t)
+      (rename-buffer "cider-shell")
+      (my-quicksight-queries-new-frame))))
+(add-hook 'cider-connected-hook #'my-cider-init-function)
