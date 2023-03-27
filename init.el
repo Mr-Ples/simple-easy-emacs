@@ -353,15 +353,17 @@ Example:
 				  (split-string
 				   (shell-command-to-string "adb devices") "\n"))))))
 (defcustom elogcat-logcat-command
-  "logcat -s Unity UTC -v threadtime -b main -b events -b system -b radio"
-  "DOC."
+  "logcat -s Unity UTC"
+  "DOC. -v threadtime"
   :group 'elogcat)
 (defun move-elogcat-to-point-max ()
   "Moves elogcat to end of buffer"
   (if (not (string-match "*elogcat*" (format "%s" (selected-window))))
     (with-selected-window (get-buffer-window "*elogcat*")
-    (goto-char (point-max))))
+      (goto-char (point-max))
+      (recenter -1)))
   )
+
 (defun elogcat-device (device)
   "Start the adb logcat process for given device."
   (interactive
@@ -395,7 +397,7 @@ Example:
 (global-set-key (kbd "C-y") 'yank-from-kill-ring)
 (global-set-key (kbd "C-v") 'yank)
 
-(select-enable-clipboard)
+(setq select-enable-clipboard t)
 ;; set variables
 (setq auto-save-visited-interval 5)
 (auto-save-visited-mode)
@@ -427,7 +429,7 @@ Example:
   (other-window 1)
   (shell)
   (rename-buffer "idlegame-shell"))
-
+ 
 ;; support setup
 (defun my-idlegame-cli-emulator (device)
   (interactive
