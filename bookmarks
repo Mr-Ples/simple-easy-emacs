@@ -2,7 +2,17 @@
 ;;; This format is meant to be slightly human-readable;
 ;;; nevertheless, you probably don't want to edit it.
 ;;; -*- End Of Bookmark File Format Version Stamp -*-
-(("bashrc"
+((".profile"
+ (filename . "/sudo:root@localhost:/home/simonl/.profile")
+ (front-context-string)
+ (rear-context-string . "LPHn-QpwAjdmk\"\n\n")
+ (position . 8053))
+("home"
+ (filename . "/sudo:root@localhost:/home/simonl/")
+ (front-context-string . "total used in di")
+ (rear-context-string . "/home/simonl:\n  ")
+ (position . 40))
+("bashrc"
  (filename . "~/.bashrc")
  (front-context-string . "\n\n# idlegame\nali")
  (rear-context-string . "c upgrade --aur\"")

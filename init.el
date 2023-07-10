@@ -356,6 +356,8 @@ Example:
   "logcat -s Unity UTC"
   "DOC. -v threadtime"
   :group 'elogcat)
+elogcat-logcat-command
+
 (defun move-elogcat-to-point-max ()
   "Moves elogcat to end of buffer"
   (if (not (string-match "*elogcat*" (format "%s" (selected-window))))
