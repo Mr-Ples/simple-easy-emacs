@@ -8,3 +8,5 @@
 /games
 tramp
 *~
+session*
+.idea
