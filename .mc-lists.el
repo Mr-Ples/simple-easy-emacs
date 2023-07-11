@@ -3,9 +3,15 @@
 
 (setq mc/cmds-to-run-for-all
       '(
+	keyboard-escape-quit
+	mouse-drag-secondary
+	xref-find-definitions
 	))
 
 (setq mc/cmds-to-run-once
       '(
+	mouse-drag-secondary
 	mouse-set-region
+	winner-undo
+	xref-find-definitions
 	))

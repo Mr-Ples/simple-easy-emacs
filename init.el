@@ -358,13 +358,23 @@ Example:
   :group 'elogcat)
 elogcat-logcat-command
 
+;(defun move-elogcat-to-point-max ()
+;  "Moves elogcat to end of buffer"
+;  (if (not (string-match "*elogcat*" (format "%s" (selected-window))))
+;    (with-selected-window (get-buffer-window "*elogcat*")
+;      (goto-char (point-max))
+;      (recenter -1)))
+;  )
+
 (defun move-elogcat-to-point-max ()
-  "Moves elogcat to end of buffer"
-  (if (not (string-match "*elogcat*" (format "%s" (selected-window))))
-    (with-selected-window (get-buffer-window "*elogcat*")
-      (goto-char (point-max))
-      (recenter -1)))
-  )
+  "Moves elogcat to end of buffer if it is visible and not selected"
+  (let ((elogcat-window (get-buffer-window "*elogcat*")))
+    (when (and elogcat-window
+               (not (eq elogcat-window (selected-window))))
+      (with-selected-window elogcat-window
+        (goto-char (point-max))
+        (recenter -1)))))
+
 
 (defun elogcat-device (device)
   "Start the adb logcat process for given device."
