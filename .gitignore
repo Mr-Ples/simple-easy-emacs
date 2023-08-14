@@ -10,3 +10,6 @@ tramp
 *~
 session*
 .idea
+/url/cache
+chatgpt/history
+url/cookies
