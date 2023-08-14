@@ -328,13 +328,24 @@ Example:
 	 ("C->" . mc/mark-all-like-this)
 	 ("C-/" . 'mc/edit-lines)
 	 ("C-S-<mouse-1>" . mc/add-cursor-on-click)))
-
+(setq debug-on-error t)
 (use-package magit)
+;; multi-magit
+;; for repos i never edit in an IDE, to keep them up to date using magit
+;; (straight-use-package
+;;  '(multi-magit :type git :host github :repo "luismbo/multi-magit"  :local-repo "multi-magit"))
+;; (global-set-key (kbd "C-x G") 'multi-magit-status)
+;; (setq multi-magit-repository-directories '(("/home/simonl/.config/autokey/" . 0)
+;;                                      ("/home/simonl/.emacs.d/" . 0)
+;; 				     ("/home/simonl/" . 0)
+;; 				     ))
 
+;;/home/media/Volume/projects/scripts_that_would_make_ben_cringe/sms/
 (use-package cape
   :ensure t
   :bind (("C-M-y" . cape-file))
   :init
+  
   (add-to-list 'completion-at-point-functions #'cape-file))
 
 (use-package sudo-edit
@@ -352,19 +363,18 @@ Example:
 			  (mapcar #'split-string
 				  (split-string
 				   (shell-command-to-string "adb devices") "\n"))))))
-(defcustom elogcat-logcat-command
-  "logcat -s Unity UTC"
-  "DOC. -v threadtime"
-  :group 'elogcat)
-elogcat-logcat-command
 
-;(defun move-elogcat-to-point-max ()
-;  "Moves elogcat to end of buffer"
-;  (if (not (string-match "*elogcat*" (format "%s" (selected-window))))
-;    (with-selected-window (get-buffer-window "*elogcat*")
-;      (goto-char (point-max))
-;      (recenter -1)))
-;  )
+(use-package chatgpt-shell
+  :ensure t
+  :custom
+  ((chatgpt-shell-openai-key
+    (lambda ()
+      (auth-source-pass-get 'secret "openai-key")))))
+(require 'chatgpt-shell)
+(setq chatgpt-shell-openai-key "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")
+
+(add-to-list 'load-path "~/.emacs.d/plugins/")
+
 
 (defun move-elogcat-to-point-max ()
   "Moves elogcat to end of buffer if it is visible and not selected"
@@ -387,7 +397,7 @@ elogcat-logcat-command
                (concat
 		(concat "adb -s " device " shell ")
                 (shell-quote-argument
-                 (concat elogcat-logcat-command
+                 (concat "logcat -s Unity UTC"
                          (when elogcat-enable-klog
                            (concat
                             " & " elogcat-klog-command))))))))
@@ -408,6 +418,9 @@ elogcat-logcat-command
 (global-set-key (kbd "C-x m") 'shell)
 (global-set-key (kbd "C-y") 'yank-from-kill-ring)
 (global-set-key (kbd "C-v") 'yank)
+
+(global-set-key (kbd "M-G") 'chatgpt-shell-prompt)
+(global-set-key (kbd "C-c C-l") 'embark-collect)
 
 (setq select-enable-clipboard t)
 ;; set variables
@@ -439,23 +452,27 @@ elogcat-logcat-command
   (async-shell-command "screencopyusb" (current-buffer)) 
   (split-window-vertically)
   (other-window 1)
-  (shell)
+  (shell-dir "")
   (rename-buffer "idlegame-shell"))
- 
-;; support setup
-(defun my-idlegame-cli-emulator (device)
-  (interactive
-   (let ((completion-ignore-case  t))
-     (list (completing-read "Choose device: " (extract-adb-device-ids) nil t))))
-  (kill-all-buffers)
-  (elogcat-device device)
-  (split-window-horizontally)
-  (switch-to-buffer (get-buffer-create "emulator"))
-  (async-shell-command "gmtool admin start 'Google Pixel'" (current-buffer)) 
-  (split-window-vertically)
-  (other-window 1)
-  (shell)
-  (rename-buffer "idlegame-shell"))
+
+(defun my-idlegame-cli-emulator ()
+  "Start the emulator and prompt the user to choose a device."
+  (interactive)
+  ;; Start the emulator
+  (async-shell-command "genymotion" (current-buffer))
+  (shell-command "gmtool admin start 'Google Pixel'" (get-buffer-create "emulator")) 
+  ;; Now prompt the user to choose a device
+  (let* ((completion-ignore-case  t)
+         (device (completing-read "Choose device: " (extract-adb-device-ids) nil t)))
+    (kill-all-buffers)
+    (elogcat-device device)
+    (split-window-horizontally)
+    (switch-to-buffer (get-buffer-create "emulator"))
+    (split-window-vertically)
+    (other-window 1)
+    (shell)
+    (rename-buffer "idlegame-shell")))
+
 
 ;; redshift setpu
 (defvar redshift-repo "~/repos/redshift-queries/")
@@ -551,3 +568,8 @@ elogcat-logcat-command
       (rename-buffer "cider-shell")
       (my-quicksight-queries-new-frame))))
 (add-hook 'cider-connected-hook #'my-cider-init-function)
+
+(setq dired-recursive-deletes 'always)
+(add-hook 'dired-mode-hook 'auto-revert-mode)
+
+(put 'scroll-left 'disabled nil)

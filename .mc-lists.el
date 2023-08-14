@@ -10,6 +10,7 @@
 
 (setq mc/cmds-to-run-once
       '(
+	mouse-drag-mode-line
 	mouse-drag-secondary
 	mouse-set-region
 	winner-undo

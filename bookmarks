@@ -2,7 +2,12 @@
 ;;; This format is meant to be slightly human-readable;
 ;;; nevertheless, you probably don't want to edit it.
 ;;; -*- End Of Bookmark File Format Version Stamp -*-
-((".profile"
+(("repos"
+ (filename . "/home/media/Volume/repos/")
+ (front-context-string . "..\n  drwxrwxrwx ")
+ (rear-context-string . "96 Jul 14 23:18 ")
+ (position . 187))
+(".profile"
  (filename . "/sudo:root@localhost:/home/simonl/.profile")
  (front-context-string)
  (rear-context-string . "LPHn-QpwAjdmk\"\n\n")
